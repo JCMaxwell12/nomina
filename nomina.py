@@ -1,7 +1,20 @@
 from openpyxl import load_workbook
 import logging
+from os import name as osname
 
-wb = load_workbook('./input/Checkins and Checkouts (1).xlsx')
+logging.basicConfig(filename="nomina.log",
+                    format='%(asctime)s %(message)s',
+                    filemode='w')
+
+logger = logging.getLogger()
+
+# verificar tipo de sistema operativo
+if osname == 'posix':   # linux, macOS
+    wb = load_workbook('./input/Checkins and Checkouts (1).xlsx')
+elif osname == 'nt':    # windows
+    wb = load_workbook('.\\input\\Checkins and Checkouts (1).xlsx')
+else:
+    pass    # loggear en caso de error
 
 
 def hr2min(hora):   # convierte horas a minutos
@@ -10,12 +23,6 @@ def hr2min(hora):   # convierte horas a minutos
         lista[0] = lista[0] + 12
     mins = lista[0] * 60 + lista[1]
     return mins
-
-logging.basicConfig(filename="nomina.log",
-                    format='%(asctime)s %(message)s',
-                    filemode='w')
- 
-logger = logging.getLogger()
 
 
 empleados = dict()
@@ -28,7 +35,8 @@ num_empleados = int(num_empleados[(2+num_empleados.find(':')):]) - 5
 
 
 class Empleado:
-    """Empleado con número, ID y nombre"""
+    """Empleado con número, ID, nombre, instancias de entrada o salida,
+    cantidad de retardos y salidas anticipadas"""
 
     def __init__(self, num, id_nom, nombre):
         self.num, self.id_nom, self.nombre = num, id_nom, nombre
@@ -43,7 +51,7 @@ class Empleado:
 # crear lista de empleados
 for empleado in range(6, num_empleados + 5):
     # obtener valores
-    emp_num = sheet['A'+str(empleado)].value    # número de empleado
+    emp_num = int(sheet['A'+str(empleado)].value)    # número de empleado
     emp_id = sheet['B'+str(empleado)].value     # id de nómina de empleado
     emp_nom = sheet['C'+str(empleado)].value    # nombre de empleado
 
@@ -64,20 +72,20 @@ for empleado in range(6, num_empleados + 5):
 
 # obtener horas trabajadas, inasistencias, retardos...
 for empleado in empleados:
-    for instancia in empleado.instanicas:
+    for instancia in empleados[empleado].instancias:
         try:  # tiempo trabajado
             hr2min(instancia['checkin']) - hr2min(instancia['checkout'])
 
             # agregar retardo
             if hr2min(instancia['entrada']) > hr2min(instancia['checkin']):
                 pass
-        except TypeError:
-            empleado.retardos.append(instancia['checkin'])
+        except AttributeError:
+            empleados[empleado].retardos.append(instancia['checkin'])
 
         try:
             # agregar salida anticipada
             if hr2min(instancia['salida']) < hr2min(instancia['checkout']):
                 pass
 
-        except TypeError:
-            empleado.retardos.append(instancia['checkin'])
+        except AttributeError:
+            empleados[empleado].retardos.append(instancia['checkin'])
