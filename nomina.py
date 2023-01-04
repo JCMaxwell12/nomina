@@ -1,4 +1,5 @@
 from openpyxl import load_workbook
+import logging
 
 wb = load_workbook('./input/Checkins and Checkouts (1).xlsx')
 
@@ -9,6 +10,12 @@ def hr2min(hora):   # convierte horas a minutos
         lista[0] = lista[0] + 12
     mins = lista[0] * 60 + lista[1]
     return mins
+
+logging.basicConfig(filename="nomina.log",
+                    format='%(asctime)s %(message)s',
+                    filemode='w')
+ 
+logger = logging.getLogger()
 
 
 empleados = dict()
@@ -64,10 +71,13 @@ for empleado in empleados:
             # agregar retardo
             if hr2min(instancia['entrada']) > hr2min(instancia['checkin']):
                 pass
+        except TypeError:
+            empleado.retardos.append(instancia['checkin'])
 
+        try:
             # agregar salida anticipada
             if hr2min(instancia['salida']) < hr2min(instancia['checkout']):
                 pass
 
         except TypeError:
-            pass
+            empleado.retardos.append(instancia['checkin'])
