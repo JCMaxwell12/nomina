@@ -14,7 +14,7 @@ if osname == 'posix':   # linux, macOS
 elif osname == 'nt':    # windows
     wb = load_workbook('.\\input\\Checkins and Checkouts (1).xlsx')
 else:
-    pass    # loggear en caso de error
+    logger.error(f'{osname} no es un valor valido de SO')   # log
 
 
 def hr2min(hora):   # convierte horas a minutos
@@ -29,7 +29,9 @@ empleados = dict()
 ids = list()
 sheet = wb['Invoice']
 
+# obtener dimensiones de hoja
 num_empleados = sheet.calculate_dimension()
+# cantidad de instancias (de checkin o checkout)
 num_empleados = int(num_empleados[(2+num_empleados.find(':')):]) - 5
 # loggear en caso de falla
 
@@ -40,12 +42,17 @@ class Empleado:
 
     def __init__(self, num, id_nom, nombre):
         self.num, self.id_nom, self.nombre = num, id_nom, nombre
-        self.instancias = list()     # instancias de entrada o salida
-        self.retardos = list()
+        self.instancias = list()    # instancias de entrada o salida
+        self.retardos = list()      # retardos
         self.anticipadas = list()   # salidas anticipadas
+        self.trabajado = list()     # tiempo trabajado
 
     def __str__(self):
-        return f'Empleado({self.num}, {self.id_nom}, {self.nombre}, {self.instancias})'
+        return (f'Empleado:\n   num: {self.num}\n   id: {self.id_nom}\n'
+                f'   nombre: {self.nombre}\n'
+                f'   instancias: {self.instancias}\n'
+                f'   retardos: {self.retardos}\n'
+                f'   salidas anticipadas: {self.anticipadas}')
 
 
 # crear lista de empleados
@@ -74,7 +81,8 @@ for empleado in range(6, num_empleados + 5):
 for empleado in empleados:
     for instancia in empleados[empleado].instancias:
         try:  # tiempo trabajado
-            hr2min(instancia['checkin']) - hr2min(instancia['checkout'])
+            empleados[empleado].append(
+                hr2min(instancia['checkin']) - hr2min(instancia['checkout']))
 
             # agregar retardo
             if hr2min(instancia['entrada']) > hr2min(instancia['checkin']):
