@@ -80,13 +80,19 @@ for empleado in range(6, num_empleados + 5):
 # obtener horas trabajadas, inasistencias, retardos...
 for empleado in empleados:
     for instancia in empleados[empleado].instancias:
+        entr = hr2min(instancia['entrada'])
+        sali = hr2min(instancia['salida'])
         try:
-            entr = hr2min(instancia['entrada'])
-            sali = hr2min(instancia['salida'])
             chin = hr2min(instancia['checkin'])
+        except AttributeError:
+            # Si no hay checkin para la instancia
+            logger.warning(f'Sin checkin ({instancia["checkin"]})')
+
+        try:
             chou = hr2min(instancia['checkout'])
         except AttributeError:
-            pass    # Si no hay checkin o checkout para la instancia
+            # Si no hay checkout para la instancia
+            logger.warning(f'Sin checkout ({instancia["checkout"]})')
 
         try:  # tiempo trabajado
             empleados[empleado].trabajado.append(chou - chin)
