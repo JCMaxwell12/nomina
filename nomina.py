@@ -80,17 +80,36 @@ for empleado in range(6, num_empleados + 5):
 # obtener horas trabajadas, inasistencias, retardos...
 for empleado in empleados:
     for instancia in empleados[empleado].instancias:
+        try:
+            entr = hr2min(instancia['entrada'])
+            sali = hr2min(instancia['salida'])
+            chin = hr2min(instancia['checkin'])
+            chou = hr2min(instancia['checkout'])
+        except AttributeError:
+            pass    # Si no hay checkin o checkout para la instancia
+
         try:  # tiempo trabajado
-            empleados[empleado].append(
-                hr2min(instancia['checkin']) - hr2min(instancia['checkout']))
+            empleados[empleado].trabajado.append(chou - chin)
+        except AttributeError:
+            logger.error(f'AttributeError: Error calculando tiempo trabajado'
+                         f'\n   Checkin:     {instancia["checkin"]} = {chin}'
+                         f'\n   Checkout:    {instancia["checkout"]} = {chou}')
 
+        try:
             # agregar retardo
-            if hr2min(instancia['entrada']) > hr2min(instancia['checkin']):
-                empleados[empleado].retardos.append(instancia['checkin'])
+            if entr > sali:
+                empleados[empleado].retardos.append(chin)
+        except AttributeError:
+            logger.error(f' AttributeError: Error calculando retardo'
+                         f'\n   Entrada:     {instancia["entrada"]}'
+                         f'\n   Checkin:     {instancia["checkin"]}')
 
+        try:
             # agregar salida anticipada
-            if hr2min(instancia['salida']) < hr2min(instancia['checkout']):
-                empleados[empleado].retardos.append(instancia['checkout'])
+            if sali < chou:
+                empleados[empleado].retardos.append(chou)
 
         except AttributeError:
-            logger.error('AttributeError: Error calculando tiempo.')
+            logger.error(f'AttributeError: Error calculando tiempo salida'
+                         f'\n   Empleado:    {instancia["salida"]}'
+                         f'\n   Instancia:   {instancia["checkout"]}')
