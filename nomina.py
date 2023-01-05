@@ -86,14 +86,11 @@ for empleado in empleados:
 
             # agregar retardo
             if hr2min(instancia['entrada']) > hr2min(instancia['checkin']):
-                pass
-        except AttributeError:
-            empleados[empleado].retardos.append(instancia['checkin'])
+                empleados[empleado].retardos.append(instancia['checkin'])
 
-        try:
             # agregar salida anticipada
             if hr2min(instancia['salida']) < hr2min(instancia['checkout']):
-                pass
+                empleados[empleado].retardos.append(instancia['checkout'])
 
         except AttributeError:
-            empleados[empleado].retardos.append(instancia['checkin'])
+            logger.error('AttributeError: Error calculando tiempo.')
