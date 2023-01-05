@@ -3,7 +3,7 @@ import logging
 from os import name as osname
 
 logging.basicConfig(filename="nomina.log",
-                    format='%(asctime)s %(message)s',
+                    format='%(asctime)s - %(levelname)s - %(message)s',
                     filemode='w')
 
 logger = logging.getLogger()
@@ -48,11 +48,15 @@ class Empleado:
         self.trabajado = list()     # tiempo trabajado
 
     def __str__(self):
-        return (f'Empleado:\n   num: {self.num}\n   id: {self.id_nom}\n'
-                f'   nombre: {self.nombre}\n'
-                f'   instancias: {self.instancias}\n'
-                f'   retardos: {self.retardos}\n'
-                f'   salidas anticipadas: {self.anticipadas}')
+        x = (f'Empleado:\n   num: {self.num}\n   id: {self.id_nom}\n'
+             f'   nombre: {self.nombre}\n'
+             f'   retardos: {self.retardos}\n'
+             f'   salidas anticipadas: {self.anticipadas}\n'
+             f'   trabajado: {self.trabajado}\n'
+             f'   instancias:\n')
+        for i in range(len(self.instancias)):
+            x += '    ' + str(self.instancias[i]) + '\n'
+        return x
 
 
 # crear lista de empleados
@@ -85,37 +89,27 @@ for empleado in empleados:
         try:
             chin = hr2min(instancia['checkin'])
         except AttributeError:
+            chin = None
             # Si no hay checkin para la instancia
             logger.warning(f'Sin checkin ({instancia["checkin"]})')
-
         try:
             chou = hr2min(instancia['checkout'])
         except AttributeError:
             # Si no hay checkout para la instancia
+            chou = None
             logger.warning(f'Sin checkout ({instancia["checkout"]})')
 
-        try:  # tiempo trabajado
-            empleados[empleado].trabajado.append(chou - chin)
-        except AttributeError:
+        if chou is None or chin is None:  # tiempo trabajado
             logger.error(f'AttributeError: Error calculando tiempo trabajado'
                          f'\n   Checkin:     {instancia["checkin"]} = {chin}'
                          f'\n   Checkout:    {instancia["checkout"]} = {chou}')
 
-        try:
+        else:
+            empleados[empleado].trabajado.append(chou - chin)
             # agregar retardo
             if entr > sali:
                 empleados[empleado].retardos.append(chin)
-        except AttributeError:
-            logger.error(f' AttributeError: Error calculando retardo'
-                         f'\n   Entrada:     {instancia["entrada"]}'
-                         f'\n   Checkin:     {instancia["checkin"]}')
 
-        try:
             # agregar salida anticipada
             if sali < chou:
                 empleados[empleado].retardos.append(chou)
-
-        except AttributeError:
-            logger.error(f'AttributeError: Error calculando tiempo salida'
-                         f'\n   Empleado:    {instancia["salida"]}'
-                         f'\n   Instancia:   {instancia["checkout"]}')
