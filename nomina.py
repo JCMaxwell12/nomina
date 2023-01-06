@@ -14,7 +14,7 @@ if osname == 'posix':   # linux, macOS
 elif osname == 'nt':    # windows
     wb = load_workbook('.\\input\\Checkins and Checkouts (1).xlsx')
 else:
-    logger.error(f'{osname} no es un valor valido de SO')   # log
+    logger.critical(f'{osname} no es un valor valido de SO')
 
 
 def hr2min(hora):   # convierte horas a minutos
@@ -113,3 +113,19 @@ for empleado in empleados:
             # agregar salida anticipada
             if sali < chou:
                 empleados[empleado].retardos.append(chou)
+
+# Escribir datos
+for empleado in empleados:
+    # crear una hoja por empleado
+    titulo = empleados[empleado].nombre.find(' ')
+    titulo = empleados[empleado].nombre[:titulo]
+    wb.create_sheet(title=titulo)
+    sheet = wb[titulo]
+    insts = empleados[empleado].instancias
+    for i, instancia in enumerate(insts):
+        sheet['A' + str(i+1)] = instancia['entrada']
+
+if osname == 'posix':   # linux, macOS
+    wb.save('./input/Checkins and Checkouts (1).xlsx')
+elif osname == 'nt':    # windows
+    wb.save('.\\input\\Checkins and Checkouts (1).xlsx')
