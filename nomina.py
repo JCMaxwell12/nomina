@@ -1,6 +1,9 @@
 from openpyxl import load_workbook
+from datetime import datetime
 import logging
 from os import name as osname
+
+# crear nomina.log
 
 logging.basicConfig(filename="nomina.log",
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -16,13 +19,15 @@ elif osname == 'nt':    # windows
 else:
     logger.critical(f'{osname} no es un valor valido de SO')
 
+# verificar si existen y crear carpetas
 
-def hr2min(hora):   # convierte horas a minutos
-    lista = [int(hora[:hora.find(':')]), int(hora[hora.find(':') + 1:-3])]
-    if hora.find('AM') == -1:
-        lista[0] = lista[0] + 12
-    mins = lista[0] * 60 + lista[1]
-    return mins
+
+# def hr2min(hora):   # convierte horas a minutos
+#     lista = [int(hora[:hora.find(':')]), int(hora[hora.find(':') + 1:-3])]
+#     if hora.find('AM') == -1:
+#         lista[0] = lista[0] + 12
+#     mins = lista[0] * 60 + lista[1]
+#     return mins
 
 
 empleados = dict()
@@ -61,7 +66,10 @@ class Empleado:
     def tiempo(self):
         self.val = int()
         for i in self.trabajado:
-            self.val += i
+            try:
+                self.val += i
+            except TypeError:
+                pass
         return self.val
 
 
@@ -79,28 +87,43 @@ for empleado in range(6, num_empleados + 5):
 
 # añadir checkins y checkouts
     for i in empleados:
+        entr = sheet['H'+str(empleado)].value
+        sali = sheet['I'+str(empleado)].value
+        chin = sheet['J'+str(empleado)].value
+        chou = sheet['K'+str(empleado)].value
+        fech = sheet['F'+str(empleado)].value
+
         if int(emp_num) == i:
-            empleados[int(emp_num)].instancias.append({
-                'entrada':  sheet['H'+str(empleado)].value,
-                'salida':   sheet['I'+str(empleado)].value,
-                'checkin':  sheet['J'+str(empleado)].value,
-                'checkout': sheet['K'+str(empleado)].value,
-                'fecha':    sheet['F'+str(empleado)].value})
+            try:
+                empleados[int(emp_num)].instancias.append({
+                    'fecha':    datetime.strptime(fech, '%Y/%m/%d'),
+                    'entrada':  datetime.strptime(entr+fech, '%I:%M %p%Y/%m/%d'),
+                    'salida':   datetime.strptime(sali+fech, '%I:%M %p%Y/%m/%d'),
+                    'checkin':  datetime.strptime(chin+fech, '%I:%M %p%Y/%m/%d'),
+                    'checkout': datetime.strptime(chou+fech, '%I:%M %p%Y/%m/%d')})
+            except TypeError:
+                empleados[int(emp_num)].instancias.append({
+                    'fecha':    datetime.strptime(fech, '%Y/%m/%d'),
+                    'entrada':  0,
+                    'salida':   0,
+                    'checkin':  0,
+                    'checkout': 0})
+                logger.warning(f'TypeError {fech, entr, sali, chin, chou}')
 
 
 # obtener horas trabajadas, inasistencias, retardos...
 for empleado in empleados:
     for instancia in empleados[empleado].instancias:
-        entr = hr2min(instancia['entrada'])
-        sali = hr2min(instancia['salida'])
+        entr = instancia['entrada']
+        sali = instancia['salida']
         try:
-            chin = hr2min(instancia['checkin'])
+            chin = instancia['checkin']
         except AttributeError:
             chin = None
             # Si no hay checkin para la instancia
             logger.warning(f'Sin checkin ({instancia["checkin"]})')
         try:
-            chou = hr2min(instancia['checkout'])
+            chou = instancia['checkout']
         except AttributeError:
             # Si no hay checkout para la instancia
             chou = None
