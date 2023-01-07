@@ -1,4 +1,9 @@
 #!/sbin/python
+import os
+try:
+    os.remove('output/Checkins and Checkouts.xlsx')
+except:
+    print('output/Checkins and Checkouts.xlsx no existe')
 import nomina
 
 print(f'dict empleados: {nomina.empleados}\n\nids: {nomina.ids}\n')

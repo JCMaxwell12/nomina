@@ -78,7 +78,8 @@ for empleado in range(6, num_empleados + 5):
                 'entrada':  sheet['H'+str(empleado)].value,
                 'salida':   sheet['I'+str(empleado)].value,
                 'checkin':  sheet['J'+str(empleado)].value,
-                'checkout': sheet['K'+str(empleado)].value})
+                'checkout': sheet['K'+str(empleado)].value,
+                'fecha':    sheet['F'+str(empleado)].value})
 
 
 # obtener horas trabajadas, inasistencias, retardos...
@@ -115,17 +116,35 @@ for empleado in empleados:
                 empleados[empleado].retardos.append(chou)
 
 # Escribir datos
+wb.create_sheet('Reporte')
 for empleado in empleados:
+    # añadir a la hoja general
+
     # crear una hoja por empleado
     titulo = empleados[empleado].nombre.find(' ')
     titulo = empleados[empleado].nombre[:titulo]
     wb.create_sheet(title=titulo)
     sheet = wb[titulo]
     insts = empleados[empleado].instancias
+
+    sheet['A1'], sheet['B1'] = 'Nombre', empleados[empleado].nombre
+    sheet['C1'], sheet['D1'] = 'ID', empleados[empleado].id_nom
+    sheet['E1'], sheet['F1'] = 'Num', empleados[empleado].num
+
+    sheet['A2'] = 'Hora de entrada'
+    sheet['B2'] = 'Checkin'
+    sheet['C2'] = 'Hora de salida'
+    sheet['D2'] = 'Checkout'
+    sheet['E2'] = 'Fecha'
+
     for i, instancia in enumerate(insts):
-        sheet['A' + str(i+1)] = instancia['entrada']
+        sheet['A' + str(i+3)] = instancia['entrada']
+        sheet['B' + str(i+3)] = instancia['checkin']
+        sheet['C' + str(i+3)] = instancia['salida']
+        sheet['D' + str(i+3)] = instancia['checkout']
+        sheet['E' + str(i+3)] = instancia['fecha']
 
 if osname == 'posix':   # linux, macOS
-    wb.save('./input/Checkins and Checkouts (1).xlsx')
+    wb.save('./output/Checkins and Checkouts.xlsx')
 elif osname == 'nt':    # windows
-    wb.save('.\\input\\Checkins and Checkouts (1).xlsx')
+    wb.save('.\\output\\Checkins and Checkouts.xlsx')
