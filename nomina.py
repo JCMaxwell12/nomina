@@ -58,6 +58,12 @@ class Empleado:
             x += '    ' + str(self.instancias[i]) + '\n'
         return x
 
+    def tiempo(self):
+        self.val = int()
+        for i in self.trabajado:
+            self.val += i
+        return self.val
+
 
 # crear lista de empleados
 for empleado in range(6, num_empleados + 5):
@@ -116,10 +122,7 @@ for empleado in empleados:
                 empleados[empleado].retardos.append(chou)
 
 # Escribir datos
-wb.create_sheet('Reporte')
 for empleado in empleados:
-    # añadir a la hoja general
-
     # crear una hoja por empleado
     titulo = empleados[empleado].nombre.find(' ')
     titulo = empleados[empleado].nombre[:titulo]
@@ -137,12 +140,29 @@ for empleado in empleados:
     sheet['D2'] = 'Checkout'
     sheet['E2'] = 'Fecha'
 
-    for i, instancia in enumerate(insts):
-        sheet['A' + str(i+3)] = instancia['entrada']
-        sheet['B' + str(i+3)] = instancia['checkin']
-        sheet['C' + str(i+3)] = instancia['salida']
-        sheet['D' + str(i+3)] = instancia['checkout']
-        sheet['E' + str(i+3)] = instancia['fecha']
+    for i, instancia in enumerate(insts, 3):
+        i = str(i)
+        sheet['A' + i] = instancia['entrada']
+        sheet['B' + i] = instancia['checkin']
+        sheet['C' + i] = instancia['salida']
+        sheet['D' + i] = instancia['checkout']
+        sheet['E' + i] = instancia['fecha']
+
+
+# añadir a la hoja general
+wb.create_sheet('Reporte', 1)
+sheet = wb['Reporte']
+sheet['A1'] = 'Nombre'
+sheet['B1'] = 'Salidas anticipadas'
+sheet['C1'] = 'Retardos'
+sheet['D1'] = 'Minutos trabajados'
+for i, empleado in enumerate(empleados, 2):
+    i = str(i)
+    sheet['A'+i] = empleados[empleado].nombre
+    sheet['B'+i] = len(empleados[empleado].anticipadas)
+    sheet['C'+i] = len(empleados[empleado].retardos)
+    sheet['D'+i] = empleados[empleado].tiempo()
+
 
 if osname == 'posix':   # linux, macOS
     wb.save('./output/Checkins and Checkouts.xlsx')
