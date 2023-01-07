@@ -1,11 +1,14 @@
 from openpyxl import load_workbook
 from datetime import datetime
+from datetime import time
+from datetime import timedelta
 import logging
 from os import name as osname
 
 # crear nomina.log
 
 logging.basicConfig(filename="nomina.log",
+                    level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s',
                     filemode='w')
 
@@ -21,13 +24,6 @@ else:
 
 # verificar si existen y crear carpetas
 
-
-# def hr2min(hora):   # convierte horas a minutos
-#     lista = [int(hora[:hora.find(':')]), int(hora[hora.find(':') + 1:-3])]
-#     if hora.find('AM') == -1:
-#         lista[0] = lista[0] + 12
-#     mins = lista[0] * 60 + lista[1]
-#     return mins
 
 
 empleados = dict()
@@ -46,7 +42,7 @@ class Empleado:
     cantidad de retardos y salidas anticipadas"""
 
     def __init__(self, num, id_nom, nombre):
-        self.num, self.id_nom, self.nombre = num, id_nom, nombre
+        self.num, self.id_nom, self.nombre = num, id_nom, nombre.title()
         self.instancias = list()    # instancias de entrada o salida
         self.retardos = list()      # retardos
         self.anticipadas = list()   # salidas anticipadas
@@ -58,18 +54,25 @@ class Empleado:
              f'   retardos: {self.retardos}\n'
              f'   salidas anticipadas: {self.anticipadas}\n'
              f'   trabajado: {self.trabajado}\n'
+             f'   tiempo: {self.tiempo()}\n'
              f'   instancias:\n')
+
         for i in range(len(self.instancias)):
             x += '    ' + str(self.instancias[i]) + '\n'
         return x
 
     def tiempo(self):
-        self.val = int()
+        self.val = timedelta(0)
         for i in self.trabajado:
             try:
+                if i < timedelta(0):
+                    i += timedelta(days=1)
                 self.val += i
+                if i < timedelta(0):
+                    i += timedelta(days=1)
+
             except TypeError:
-                pass
+                self.val += timedelta(i)
         return self.val
 
 
@@ -96,7 +99,7 @@ for empleado in range(6, num_empleados + 5):
         if int(emp_num) == i:
             try:
                 empleados[int(emp_num)].instancias.append({
-                    'fecha':    datetime.strptime(fech, '%Y/%m/%d'),
+                    'fecha':    datetime.strptime(fech, '%Y/%m/%d').date(),
                     'entrada':  datetime.strptime(entr+fech, '%I:%M %p%Y/%m/%d'),
                     'salida':   datetime.strptime(sali+fech, '%I:%M %p%Y/%m/%d'),
                     'checkin':  datetime.strptime(chin+fech, '%I:%M %p%Y/%m/%d'),
@@ -157,13 +160,19 @@ for empleado in empleados:
     sheet['C1'], sheet['D1'] = 'ID', empleados[empleado].id_nom
     sheet['E1'], sheet['F1'] = 'Num', empleados[empleado].num
 
-    sheet['A2'] = 'Hora de entrada'
-    sheet['B2'] = 'Checkin'
-    sheet['C2'] = 'Hora de salida'
-    sheet['D2'] = 'Checkout'
-    sheet['E2'] = 'Fecha'
+    sheet['A3'] = 'Hora de entrada'
+    sheet['B3'] = 'Checkin'
+    sheet['C3'] = 'Hora de salida'
+    sheet['D3'] = 'Checkout'
+    sheet['E3'] = 'Fecha'
 
-    for i, instancia in enumerate(insts, 3):
+    sheet.column_dimensions['A'].width = 18
+    sheet.column_dimensions['B'].width = 18
+    sheet.column_dimensions['C'].width = 18
+    sheet.column_dimensions['D'].width = 18
+    sheet.column_dimensions['E'].width = 12
+
+    for i, instancia in enumerate(insts, 4):
         i = str(i)
         sheet['A' + i] = instancia['entrada']
         sheet['B' + i] = instancia['checkin']
@@ -178,7 +187,12 @@ sheet = wb['Reporte']
 sheet['A1'] = 'Nombre'
 sheet['B1'] = 'Salidas anticipadas'
 sheet['C1'] = 'Retardos'
-sheet['D1'] = 'Minutos trabajados'
+sheet['D1'] = 'Tiempo trabajado'
+sheet.column_dimensions['A'].width = 40
+sheet.column_dimensions['B'].width = 10
+sheet.column_dimensions['C'].width = 10
+sheet.column_dimensions['D'].width = 10
+
 for i, empleado in enumerate(empleados, 2):
     i = str(i)
     sheet['A'+i] = empleados[empleado].nombre
