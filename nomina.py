@@ -1,4 +1,7 @@
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Color, PatternFill, Font, Border
+from openpyxl.formatting.rule import ColorScaleRule, CellIsRule, FormulaRule
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
@@ -24,7 +27,9 @@ else:
 
 # verificar si existen y crear carpetas
 
-
+redFill = PatternFill(start_color='EE1111',
+                end_color='EE1111',
+                fill_type='solid')
 
 empleados = dict()
 ids = list()
@@ -200,6 +205,16 @@ for i, empleado in enumerate(empleados, 2):
     sheet['C'+i] = len(empleados[empleado].retardos)
     sheet['D'+i] = empleados[empleado].tiempo()
 
+# marcar por colores
+for hoja in wb:
+    for y in range(1, hoja.max_row):
+        for x in range(1, hoja.max_column):
+            if hoja.cell(row=y, column=x).value == 0:
+                hoja[get_column_letter(x) + str(y)] = None
+    dimensiones = sheet.calculate_dimension()
+    hoja.conditional_formatting.add(dimensiones,
+                                    FormulaRule(formula=[f'ISBLANK({dimensiones[:dimensiones.find(":")]})'],
+                                                stopIfTrue=False, fill=redFill))
 
 if osname == 'posix':   # linux, macOS
     wb.save('./output/Checkins and Checkouts.xlsx')
