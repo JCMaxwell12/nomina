@@ -3,6 +3,7 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 import logging
+import os
 from os import name as osname
 
 # crear nomina.log
@@ -14,18 +15,23 @@ logging.basicConfig(filename="nomina.log",
 
 logger = logging.getLogger()
 
-# verificar tipo de sistema operativo
-if osname == 'posix':   # linux, macOS
-    wb = load_workbook('./input/Checkins and Checkouts (1).xlsx')
-elif osname == 'nt':    # windows
-    wb = load_workbook('.\\input\\Checkins and Checkouts (1).xlsx')
-else:
-    logger.critical(f'{osname} no es un valor valido de SO')
-
 # verificar si existen y crear carpetas
+if os.path.exists('input') is False:
+    if os.path.isfile('input') is False:
+        os.mkdir('input')
+        logger.info('created input/')
+if os.path.exists('output') is False:
+    if os.path.isfile('output') is False:
+        os.mkdir('output')
+        logger.info('created output/')
+wb = None
+for i in os.listdir('input'):
+    if i.find('.xlsx') != -1:
+        wb = load_workbook(os.path.join('input', i))
+        break
 
-
-
+if wb is None:
+    logger.critical('Ningún archivo .xlsx encontrado en input/')
 empleados = dict()
 ids = list()
 sheet = wb['Invoice']
