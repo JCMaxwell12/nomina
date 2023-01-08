@@ -155,8 +155,7 @@ for empleado in empleados:
 # Escribir datos
 for empleado in empleados:
     # crear una hoja por empleado
-    titulo = empleados[empleado].nombre.find(' ')
-    titulo = empleados[empleado].nombre[:titulo]
+    titulo = empleados[empleado].emp_num
     wb.create_sheet(title=titulo)
     sheet = wb[titulo]
     insts = empleados[empleado].instancias
