@@ -4,7 +4,6 @@ from datetime import time
 from datetime import timedelta
 import logging
 import os
-from os import name as osname
 
 # crear nomina.log
 
@@ -25,13 +24,14 @@ if os.path.exists('output') is False:
         os.mkdir('output')
         logger.info('created output/')
 wb = None
+# Cargar el primer archivo en input/
 for i in os.listdir('input'):
     if i.find('.xlsx') != -1:
         wb = load_workbook(os.path.join('input', i))
         break
-
 if wb is None:
     logger.critical('Ningún archivo .xlsx encontrado en input/')
+
 empleados = dict()
 ids = list()
 sheet = wb['Invoice']
@@ -112,11 +112,11 @@ for empleado in range(6, num_empleados + 5):
                     'checkout': datetime.strptime(chou+fech, '%I:%M %p%Y/%m/%d')})
             except TypeError:
                 empleados[int(emp_num)].instancias.append({
-                    'fecha':    datetime.strptime(fech, '%Y/%m/%d'),
-                    'entrada':  0,
-                    'salida':   0,
-                    'checkin':  0,
-                    'checkout': 0})
+                    'fecha':    datetime.strptime(fech, '%Y/%m/%d').date(),
+                    'entrada':  datetime.strptime(entr+fech, '%I:%M %p%Y/%m/%d'),
+                    'salida':   datetime.strptime(sali+fech, '%I:%M %p%Y/%m/%d'),
+                    'checkin':  None,
+                    'checkout': None})
                 logger.warning(f'TypeError {fech, entr, sali, chin, chou}')
 
 
@@ -138,20 +138,24 @@ for empleado in empleados:
             chou = None
             logger.warning(f'Sin checkout ({instancia["checkout"]})')
 
-        if chou is None or chin is None:  # tiempo trabajado
+        if chou is None:  # tiempo trabajado
             logger.error(f'AttributeError: Error calculando tiempo trabajado'
-                         f'\n   Checkin:     {instancia["checkin"]} = {chin}'
                          f'\n   Checkout:    {instancia["checkout"]} = {chou}')
 
+        elif chin is None:
+            logger.error(f'AttributeError: Error calculando tiempo trabajado'
+                         f'\n   Checkin:     {instancia["checkin"]} = {chin}')
+
         else:
+            # tiempo trabajado
             empleados[empleado].trabajado.append(chou - chin)
             # agregar retardo
-            if entr > sali:
+            if entr < chin:
                 empleados[empleado].retardos.append(chin)
 
             # agregar salida anticipada
-            if sali < chou:
-                empleados[empleado].retardos.append(chou)
+            if sali > chou:
+                empleados[empleado].anticipadas.append(chou)
 
 # Escribir datos
 for empleado in empleados:
@@ -179,34 +183,33 @@ for empleado in empleados:
 
     for i, instancia in enumerate(insts, 4):
         i = str(i)
-        sheet['A' + i] = instancia['entrada']
-        sheet['B' + i] = instancia['checkin']
-        sheet['C' + i] = instancia['salida']
-        sheet['D' + i] = instancia['checkout']
-        sheet['E' + i] = instancia['fecha']
+        sheet['A'+i] = instancia['entrada']
+        sheet['B'+i] = instancia['checkin']
+        sheet['C'+i] = instancia['salida']
+        sheet['D'+i] = instancia['checkout']
+        sheet['E'+i] = instancia['fecha']
 
 
 # añadir a la hoja general
 wb.create_sheet('Reporte', 1)
 sheet = wb['Reporte']
-sheet['A1'] = 'Nombre'
-sheet['B1'] = 'Salidas anticipadas'
+sheet['A1'] = 'Número'
+sheet['B1'] = 'Nombre'
 sheet['C1'] = 'Retardos'
-sheet['D1'] = 'Tiempo trabajado'
-sheet.column_dimensions['A'].width = 40
-sheet.column_dimensions['B'].width = 10
+sheet['D1'] = 'Salidas anticipadas'
+sheet['E1'] = 'Tiempo trabajado'
+sheet.column_dimensions['A'].width = 5
+sheet.column_dimensions['B'].width = 40
 sheet.column_dimensions['C'].width = 10
 sheet.column_dimensions['D'].width = 10
+sheet.column_dimensions['E'].width = 10
 
 for i, empleado in enumerate(empleados, 2):
     i = str(i)
-    sheet['A'+i] = empleados[empleado].nombre
-    sheet['B'+i] = len(empleados[empleado].anticipadas)
+    sheet['A'+i] = empleados[empleado].num
+    sheet['B'+i] = empleados[empleado].nombre
     sheet['C'+i] = len(empleados[empleado].retardos)
-    sheet['D'+i] = empleados[empleado].tiempo()
+    sheet['D'+i] = len(empleados[empleado].anticipadas)
+    sheet['E'+i] = empleados[empleado].tiempo()
 
-
-if osname == 'posix':   # linux, macOS
-    wb.save('./output/Checkins and Checkouts.xlsx')
-elif osname == 'nt':    # windows
-    wb.save('.\\output\\Checkins and Checkouts.xlsx')
+wb.save(os.path.join('output', 'Checkins and Checkouts.xlsx'))
