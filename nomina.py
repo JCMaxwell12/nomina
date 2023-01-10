@@ -1,6 +1,6 @@
 from openpyxl import load_workbook
 from datetime import datetime
-from datetime import time
+from datetime import date
 from datetime import timedelta
 import logging
 import os
@@ -71,11 +71,11 @@ class Empleado:
         self.val = timedelta(0)
         for i in self.trabajado:
             try:
-                if i < timedelta(0):
-                    i += timedelta(days=1)
+#                if i < timedelta(0):
+#                    i += timedelta(days=1)
                 self.val += i
-                if i < timedelta(0):
-                    i += timedelta(days=1)
+#                if i < timedelta(0):
+#                    i += timedelta(days=1)
 
             except TypeError:
                 self.val += timedelta(i)
@@ -118,7 +118,13 @@ for empleado in range(6, num_empleados + 5):
                     'checkin':  None,
                     'checkout': None})
                 logger.warning(f'TypeError {fech, entr, sali, chin, chou}')
-
+            # Corregir checkout para turno nocturno
+            if empleados[int(emp_num)].instancias[-1]['entrada'] > empleados[int(emp_num)].instancias[-1]['salida']:
+                empleados[int(emp_num)].instancias[-1]['salida'] += timedelta(days=1)
+                try:
+                    empleados[int(emp_num)].instancias[-1]['checkout'] += timedelta(days=1)
+                except TypeError:
+                    pass
 
 # obtener horas trabajadas, inasistencias, retardos...
 for empleado in empleados:
@@ -156,6 +162,8 @@ for empleado in empleados:
             # agregar salida anticipada
             if sali > chou:
                 empleados[empleado].anticipadas.append(chou)
+# Ordenar datos
+empleados = {key: val for key, val in sorted(empleados.items(), key=lambda ele: ele[0])}
 
 # Escribir datos
 for empleado in empleados:
@@ -169,25 +177,31 @@ for empleado in empleados:
     sheet['C1'], sheet['D1'] = 'ID', empleados[empleado].id_nom
     sheet['E1'], sheet['F1'] = 'Num', empleados[empleado].num
 
-    sheet['A3'] = 'Hora de entrada'
-    sheet['B3'] = 'Checkin'
-    sheet['C3'] = 'Hora de salida'
-    sheet['D3'] = 'Checkout'
-    sheet['E3'] = 'Fecha'
+    sheet['A3'] = 'Fecha'
+    sheet['B3'] = 'Entrada'
+    sheet['C3'] = 'Checkin'
+    sheet['D3'] = 'Salida'
+    sheet['E3'] = 'Checkout'
+    sheet['F3'] = 'Horas trabajadas'
 
-    sheet.column_dimensions['A'].width = 18
+    sheet.column_dimensions['A'].width = 12
     sheet.column_dimensions['B'].width = 18
     sheet.column_dimensions['C'].width = 18
     sheet.column_dimensions['D'].width = 18
-    sheet.column_dimensions['E'].width = 12
+    sheet.column_dimensions['E'].width = 18
+    sheet.column_dimensions['F'].width = 18
 
     for i, instancia in enumerate(insts, 4):
         i = str(i)
-        sheet['A'+i] = instancia['entrada']
-        sheet['B'+i] = instancia['checkin']
-        sheet['C'+i] = instancia['salida']
-        sheet['D'+i] = instancia['checkout']
-        sheet['E'+i] = instancia['fecha']
+        sheet['A'+i] = instancia['fecha']
+        sheet['B'+i] = instancia['entrada']
+        sheet['C'+i] = instancia['checkin']
+        sheet['D'+i] = instancia['salida']
+        sheet['E'+i] = instancia['checkout']
+        try:
+            sheet['F'+i] = instancia['checkout'] - instancia['checkin']
+        except TypeError:
+            sheet['F'+i] = None
 
 
 # añadir a la hoja general
@@ -212,4 +226,5 @@ for i, empleado in enumerate(empleados, 2):
     sheet['D'+i] = len(empleados[empleado].anticipadas)
     sheet['E'+i] = empleados[empleado].tiempo()
 
-wb.save(os.path.join('output', 'Checkins and Checkouts.xlsx'))
+savepath = str(date.today()) + ' Checkins and Checkouts.xlsx'
+wb.save(os.path.join('output', savepath))

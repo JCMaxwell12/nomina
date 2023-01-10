@@ -1,7 +1,7 @@
 #!/sbin/python
 import os
 try:
-    os.remove('output/Checkins and Checkouts.xlsx')
+    os.remove('output/*.xlsx')
 except:
     print('output/Checkins and Checkouts.xlsx no existe')
 import nomina
